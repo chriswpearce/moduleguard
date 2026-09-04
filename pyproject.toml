@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "moduleguard"
+version = "0.3.0"
+description = "Build import-compatible native Python modules with portable licences"
+readme = "README.md"
+requires-python = ">=3.9"
+license = "LicenseRef-Proprietary"
+authors = [{ name = "Chris Pearce" }]
+dependencies = [
+    "cryptography>=41",
+    "Nuitka>=4.2,<5",
+    "packaging>=23",
+    "ziglang>=0.16,<0.17",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=7.4", "numpy>=1.26"]
+
+[project.scripts]
+moduleguard = "moduleguard.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
