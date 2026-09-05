@@ -12,7 +12,7 @@ from .obfuscation import obfuscate_source
 _RUNTIME_TEMPLATE = r'''
 # ModuleGuard runtime gate. This block is compiled into the native extension.
 def __moduleguard_fail(message):
-    raise ImportError("ModuleGuard licence check failed: " + message)
+    raise ImportError("ModuleGuard licence check failed: " + message) from None
 
 
 def __moduleguard_canonical(value):
@@ -121,6 +121,11 @@ def __moduleguard_check_url(__moduleguard_url):
         )
 
 
+def __moduleguard_redact_path(__moduleguard_path_text):
+    __moduleguard_visible_length = max(1, len(__moduleguard_path_text) // 2)
+    return __moduleguard_path_text[:__moduleguard_visible_length] + "..."
+
+
 def __moduleguard_check_path(__moduleguard_path_text):
     if __moduleguard_path_text is None:
         return
@@ -142,7 +147,7 @@ def __moduleguard_check_path(__moduleguard_path_text):
             return
         __moduleguard_fail(
             "required path is not an accessible file or folder: {}".format(
-                __moduleguard_path_text
+                __moduleguard_redact_path(__moduleguard_path_text)
             )
         )
     except ImportError:
@@ -150,7 +155,8 @@ def __moduleguard_check_path(__moduleguard_path_text):
     except Exception as __moduleguard_error:
         __moduleguard_fail(
             "required path could not be opened: {} ({})".format(
-                __moduleguard_path_text, __moduleguard_error
+                __moduleguard_redact_path(__moduleguard_path_text),
+                type(__moduleguard_error).__name__,
             )
         )
 
@@ -250,6 +256,7 @@ __moduleguard_check()
 
 del __moduleguard_check, __moduleguard_find_path, __moduleguard_adjacent_path
 del __moduleguard_central_path, __moduleguard_check_url, __moduleguard_check_path
+del __moduleguard_redact_path
 del __moduleguard_parse_utc, __moduleguard_canonical, __moduleguard_fail
 del __moduleguard_base64, __moduleguard_datetime
 del __moduleguard_json, __moduleguard_os, __moduleguard_pathlib
