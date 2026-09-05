@@ -47,7 +47,7 @@ The publisher protects modules and issues licences. The publisher needs:
 - the source module and its dependencies; and
 - the encrypted private signing key.
 
-ModuleGuard installs Nuitka and Zig as Python packages. It does not require Visual Studio, administrator permission or a system-wide compiler.
+ModuleGuard installs Nuitka and Zig as Python packages. It does not require administrator permission or a system-wide compiler.
 
 ### End user
 
@@ -59,7 +59,7 @@ The end user needs only:
 - `cryptography`; and
 - the protected module's normal dependencies.
 
-The end user does **not** need ModuleGuard, a compiler, a private key or an activation request.
+The end user does **not** need ModuleGuard, a compiler, or a private key.
 
 ## Quick start for publishers
 
@@ -73,7 +73,7 @@ These examples use:
 | Product version | `1.0.0` |
 | Release folder | `release\pricing-rules-1.0.0-py39` |
 
-Run commands from the ModuleGuard project folder. The commands below work in both PowerShell and Command Prompt because each command is on one line.
+Run commands from the ModuleGuard project folder. The commands below work in both PowerShell and Command Prompt.
 
 ### 1. Install ModuleGuard
 
@@ -135,7 +135,7 @@ The release folder is generated distribution output and is not required in the s
 python -m moduleguard issue --product-id "pricing-rules" --private-key ".local\pricing-rules.private.pem" --product-version "1.0.0" --duration "1mo" --output "release\pricing-rules-1.0.0-py39\pricing-rules.lic" --ledger ".local\issuance-ledger.jsonl"
 ```
 
-No end-user request is required. ModuleGuard asks for the private-key passphrase and signs the product ID, product version, validity dates and any optional website or file-system access requirement.
+ModuleGuard asks for the private-key passphrase and signs the product ID, product version, validity dates and any optional website or file-system access requirement.
 
 > **Licence filename requirement:** unless `MODULEGUARD_LICENSE_FILE` is set, the licence filename **must** be the protected product ID's safe filename form followed by `.lic`. The product ID is the value supplied to both `moduleguard protect --product-id` and `moduleguard issue --product-id`. The licence file's name is independent of the private-key filename and the name of the person or computer issuing it.
 
@@ -144,9 +144,25 @@ For example:
 | Product ID used during protection | Required licence filename |
 | --- | --- |
 | `pricing-rules` | `pricing-rules.lic` |
-| `OSW_element_library` | `OSW_element_library.lic` |
+| `element_library` | `element_library.lic` |
 
-Therefore, a licence for product ID `OSW_element_library` named `amos.lic` will not be found automatically, even when it contains a valid signature and the correct product ID. Rename it to `OSW_element_library.lic`, or set `MODULEGUARD_LICENSE_FILE` to its full path.
+Therefore, a licence for product ID `element_library` named `vector_lib.lic` will not be found automatically, even when it contains a valid signature and the correct product ID. Rename it to `element_library.lic`, or set `MODULEGUARD_LICENSE_FILE` to its full path.
+
+For example, to use `C:\CompanyLicences\vector_lib.lic` without renaming it, set the environment variable before starting the protected application:
+
+```powershell
+# PowerShell
+$env:MODULEGUARD_LICENSE_FILE = "C:\CompanyLicences\vector_lib.lic"
+python "C:\Applications\run_report.py"
+```
+
+```batch
+rem Command Prompt
+set "MODULEGUARD_LICENSE_FILE=C:\CompanyLicences\vector_lib.lic"
+python "C:\Applications\run_report.py"
+```
+
+These commands set the variable for the current terminal session. The path must include the licence filename, not only its containing folder.
 
 Characters that are unsafe in a Windows filename are converted when ModuleGuard calculates the safe filename. Use the `license-path` command to display the exact expected name and central path:
 
@@ -162,7 +178,9 @@ A licence may have any filename only when its full path is supplied through `MOD
 python -m moduleguard inspect --release-dir "release\pricing-rules-1.0.0-py39" --forbid-text "a distinctive confidential phrase"
 ```
 
-`--release-dir` identifies the folder containing the `.pyd`, `.whl` and release manifest. Avoid short forbidden text such as `x1`, which can occur coincidentally in compiled binary bytes.
+`--release-dir` identifies the folder containing the `.pyd`, `.whl` and release manifest.
+
+`--forbid-text` scans every release file for the exact UTF-8 text and fails the inspection if it is found, making it useful for checking that a distinctive confidential source phrase was not embedded in the distributed artefacts; repeat the option to check multiple phrases.
 
 ## Optional access requirement
 
@@ -203,13 +221,13 @@ Use `--required-path` to require access to an absolute local, mapped-drive or UN
 Folder example:
 
 ```text
-python -m moduleguard issue --product-id "pricing-rules" --private-key ".local\pricing-rules.private.pem" --product-version "1.0.0" --duration "1mo" --required-path "P:\GBEMF\Systems Engineering\Structural Integrity\Chris Pearce\temp" --output "release\pricing-rules-1.0.0-py39\pricing-rules.lic"
+python -m moduleguard issue --product-id "pricing-rules" --private-key ".local\pricing-rules.private.pem" --product-version "1.0.0" --duration "1mo" --required-path "P:\ExampleCorp\ProtectedResources" --output "release\pricing-rules-1.0.0-py39\pricing-rules.lic"
 ```
 
 File example:
 
 ```text
-python -m moduleguard issue --product-id "pricing-rules" --private-key ".local\pricing-rules.private.pem" --product-version "1.0.0" --duration "1mo" --required-path "P:\GBEMF\Systems Engineering\Structural Integrity\Chris Pearce\temp\test.txt" --output "release\pricing-rules-1.0.0-py39\pricing-rules.lic"
+python -m moduleguard issue --product-id "pricing-rules" --private-key ".local\pricing-rules.private.pem" --product-version "1.0.0" --duration "1mo" --required-path "P:\ExampleCorp\ProtectedResources\access-marker.txt" --output "release\pricing-rules-1.0.0-py39\pricing-rules.lic"
 ```
 
 Whenever a new Python process imports the protected module, ModuleGuard:
@@ -301,8 +319,8 @@ The issuer can use a duration:
 
 | Value | Meaning |
 | --- | --- |
-| `7d` | Seven exact 24-hour periods. |
-| `30d` | Thirty exact 24-hour periods. |
+| `7d` | Seven days. |
+| `30d` | Thirty days. |
 | `1mo` | One calendar month. |
 | `6mo` | Six calendar months. |
 | `1y` | One calendar year. |
@@ -321,7 +339,7 @@ To renew a licence, issue a new file and replace the old one. Restart the Python
 
 ## Obfuscation and compilation
 
-Obfuscation runs automatically during `protect`. There is no switch to disable it.
+Obfuscation runs automatically during `protect`.
 
 ModuleGuard:
 
@@ -339,7 +357,7 @@ calculate_price(100, 0.2)
 calculate_price(100, tax=0.2)
 ```
 
-Code that examines local names using `locals()`, `vars()`, `eval()`, `exec()`, `compile()`, stack frames or code-object details receives conservative treatment and should be regression-tested carefully.
+Code that examines local names using `locals()`, `vars()`, `eval()`, `exec()`, or `compile()` receives conservative treatment, but should be tested carefully.
 
 ## GitHub and Azure DevOps guidance
 
@@ -373,17 +391,13 @@ The product version must also match exactly. A module protected as `1.0.0` rejec
 The error lists the locations searched. Check that:
 
 - the filename matches the product-specific filename;
-- a beside-the-module licence is in the actual directory containing the loaded `.pyd`;
+- a beside-the-module licence is in the directory containing the loaded `.pyd`;
 - a central licence is under `%LOCALAPPDATA%\ModuleGuard\licenses`; or
 - `MODULEGUARD_LICENSE_FILE` contains the full correct path.
 
-### Unsupported licence schema version
-
-Schema-v1 machine-bound licences and schema-v2 portable licences are not accepted by newly protected modules. Required file and folder paths were introduced in schema 3 so that older protected modules cannot silently ignore the new restriction. Rebuild the protected module and issue a new licence. No activation request is needed.
-
 ### Required website could not be loaded
 
-Check the URL in the licence, internet or VPN connection, proxy configuration, TLS inspection and website availability. The check times out after five seconds. Issue a replacement licence without `--required-url` if network presence should not be required.
+Check the URL in the licence, internet or VPN connection, proxy configuration and website availability. The check times out after five seconds. Issue a replacement licence without `--required-url` if network presence should not be required.
 
 ### Required path is not accessible or could not be opened
 
@@ -414,7 +428,13 @@ Use a wheel built for that CPython minor version and Windows architecture.
 
 ### Python imports an old or readable module
 
-Remove obsolete copies from the application folder and Python path. A Nuitka module exposes `__compiled__`; its `extension_filename` identifies the loaded `.pyd`.
+Remove obsolete copies from the application folder and Python path. To see which file Python actually imports, replace `pricing_rules` with the protected module's name and run:
+
+```text
+python -c "import pricing_rules; print(pricing_rules.__file__)"
+```
+
+The displayed path should identify the expected `.pyd`. If it instead identifies a `.py` file or an older `.pyd`, remove that copy or correct the Python path before trying again.
 
 ## Security limits
 
@@ -437,8 +457,6 @@ It does not prevent a recipient from:
 - reproducing an algorithm through testing;
 - changing the local clock to weaken an offline expiry check; or
 - continuing to use a module already imported into a running process.
-
-Immediate revocation, trusted time, strong user authentication and robust network authorisation require an online service outside the user's control.
 
 ## Command reference
 
